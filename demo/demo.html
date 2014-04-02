@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<input type="file" id="filepicker">
+<hr>
+<div id="demo"></div>
+<hr>
+<input type="number" value="4" id="radius" style="width: 32px;">
+<span style="display: inline-block; width:32px; height: 32px; background-color: #ff0000"; id="red"></span>
+<span style="display: inline-block; width:32px; height: 32px; background-color: #00ff00;" id="green"></span>
+<select id="mode"><option value="line" selected>Line</option><option value="blob">Blob</option></select>
+<button id="reset" type="button">Reset</button>
+<hr>
+<button id="get" type="button">Get Data</button>
+
+<script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
+<script src="../src/jquery.imageMarker.js"></script>
+<script>
+var handleImage, $demo;
+
+$demo = $('#demo');
+
+// Init the plugin
+$demo.imageMarker({
+    src: 'http://placekitten.com/320/240',
+    color: '#00ff00',
+    radius: 4,
+    mode: 'line'
+});
+
+// For handling a file change
+handleImage = function(file) {
+	var reader;
+
+	if (!file || !file.type.match(/image.*/)) {
+		return false;
+	}
+
+	reader = new FileReader();
+	reader.onloadend = function() {
+		// Change the reference image
+		$demo.imageMarker('referenceImage', reader.result);
+	};
+	reader.readAsDataURL(file);
+
+	return true;
+};
+
+// Picking a file
+$('#filepicker').on('change', function() {
+	handleImage($(this).prop('files')[0]);
+});
+
+// Dropping a file onto the widget
+$demo.on('drop', function(e) {
+	var dt = e.dataTransfer;
+	var files = dt.files;
+
+	e.stopPropagation();
+	e.preventDefault();
+
+	handleImage(files[0]);
+});
+
+// Changing radius
+$('#radius').on('change', function() {
+	$demo.imageMarker('radius', $(this).val());
+});
+
+// Changing color
+$('#red').on('click', function() {
+	$demo.imageMarker('color', '#ff0000');
+});
+$('#green').on('click', function() {
+	$demo.imageMarker('color', '#00ff00');
+});
+
+// Changing mode
+$('#mode').on('change', function() {
+	$demo.imageMarker('mode', $(this).val());
+});
+
+// Resetting
+$('#reset').on('click', function() {
+	$demo.imageMarker('reset');
+});
+
+// Data Output
+$('#get').on('click', function() {
+	// String format:
+	var maskDataURI = $demo.imageMarker('maskImage');
+
+	// For AJAX post requests:
+	var imagesFormData = $demo.imageMarker('maskImage', null, 'FormData');
+
+	// Add the reference image file input too
+	imagesFormData.append("reference", $('#filepicker')[0].files[0]);
+
+	// Output the dataURI
+	console.log(maskDataURI, imagesFormData);
+
+	// Demo AJAX request to save the images
+	$.ajax({
+		url: 'somewhere',
+		data: imagesFormData,
+		processData: false,
+		type: 'POST',
+		success: function(data) {
+			console.log(data);
+		},
+		error: function(data) {
+			console.log(data);
+		}
+	});
+
+
+	// Open the mask data URI to look at it
+	window.open(maskDataURI, "preview", "menubar=0,resizable=1");
+});
+
+</script>
